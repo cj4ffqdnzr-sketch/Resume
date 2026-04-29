@@ -1,1 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rem van der Heijden — Video CV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="animations.jsx"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+  #root { width: 100%; height: 100%; }
 
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: 0.7; }
+    94% { opacity: 1; }
+    96% { opacity: 0.8; }
+    97% { opacity: 1; }
+  }
+  @keyframes glitch {
+    0%,100% { clip-path: none; transform: none; }
+    20% { clip-path: polygon(0 15%, 100% 15%, 100% 35%, 0 35%); transform: translate(-4px, 0); }
+    21% { clip-path: none; transform: none; }
+    40% { clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%); transform: translate(4px, 0); }
+    41% { clip-path: none; transform: none; }
+  }
+  @keyframes stamp {
+    0% { transform: scale(3) rotate(-15deg); opacity: 0; }
+    60% { transform: scale(0.95) rotate(-15deg); opacity: 1; }
+    70% { transform: scale(1.05) rotate(-15deg); }
+    100% { transform: scale(1) rotate(-15deg); opacity: 1; }
+  }
+  @keyframes letterPress {
+    0% { opacity: 0; transform: scale(1.4); filter: blur(20px); }
+    100% { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+  @keyframes slideUp {
+    0% { opacity: 0; transform: translateY(60px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideInLeft {
+    0% { opacity: 0; transform: translateX(-100px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInRight {
+    0% { opacity: 0; transform: translateX(100px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes zoomIn {
+    0% { opacity: 0; transform: scale(0.5); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes countUp {
+    0% { opacity: 0; transform: translateY(30px) scale(0.5); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes barFill {
+    0% { width: 0%; }
+    100% { width: var(--target-width); }
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  @keyframes typewriter {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    10% { transform: translateX(-8px) rotate(-1deg); }
+    20% { transform: translateX(8px) rotate(1deg); }
+    30% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    50% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    70% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+  }
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes borderFlash {
+    0%,100% { border-color: #f5c518; }
+    50% { border-color: #fff; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── Scene Components ────────────────────────────────────────────────────────
+
+function SceneIntro({ progress, localTime }) {
+  const showConfidential = localTime > 0.5;
+  const showReveal = localTime > 2.5;
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+      {/* Scanline */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)', pointerEvents: 'none', zIndex: 10 }} />
+      
+      {/* Noise texture */}
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.03, background: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")', backgroundSize: '256px' }} />
+
+      {showConfidential && !showReveal && (
+        <div style={{
+          fontFamily: 'Bebas Neue, sans-serif',
+          fontSize: '120px',
+          color: 'transparent',
+          WebkitTextStroke: '4px #cc0000',
+          letterSpacing: '20px',
+          animation: 'stamp 0.4s ease-out forwards',
+          textAlign: 'center',
+          transform: 'rotate(-15deg)',
+          border: '12px solid #cc0000',
+          padding: '20px 60px',
+          textShadow: '0 0 40px rgba(204,0,0,0.5)',
+        }}>CONFIDENTIAL</div>
+      )}
+
+      {showReveal && (
+        <div style={{ textAlign: 'center', animation: 'fadeIn 0.5s ease-out forwards' }}>
+          <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '18px', color: '#666', letterSpacing: '8px', marginBottom: '20px' }}>FILE #NL-2026-RVH</div>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '36px', color: '#f5c518', letterSpacing: '12px' }}>OPENING DOSSIER...</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SceneTitle({ localTime }) {
+  const t1 = localTime > 0.3;
+  const t2 = localTime > 1.0;
+  const t3 = localTime > 1.8;
+  return (
+    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '30px', overflow: 'hidden' }}>
+      {/* Big gold line */}
+      <div style={{ width: t1 ? '600px' : '0px', height: '3px', background: 'linear-gradient(90deg, transparent, #f5c518, transparent)', transition: 'width 0.6s ease', marginBottom: '10px' }} />
+      
+      {t1 && <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '28px', letterSpacing: '20px', color: '#f5c518', animation: 'slideUp 0.5s ease-out forwards', textAlign: 'center' }}>
+        BARNEY STINSON PICTURES PRESENTS
+      </div>}
+      
+      {t2 && <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '110px', lineHeight: 1, letterSpacing: '8px', color: '#fff', animation: 'letterPress 0.6s ease-out forwards', textAlign: 'center', textShadow: '0 0 60px rgba(245,197,24,0.3)' }}>
+        THE LEGEND
+      </div>}
+
+      {t3 && <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '22px', letterSpacing: '10px', color: '#aaa', animation: 'slideUp 0.5s ease-out forwards', textTransform: 'uppercase', textAlign: 'center' }}>
+        THE MYTH · THE MAN · THE RESUME
+      </div>}
+
+      <div style={{ width: t1 ? '600px' : '0px', height: '3px', background: 'linear-gradient(90deg, transparent, #f5c518, transparent)', transition: 'width 0.8s ease 0.3s', marginTop: '10px' }} />
+    </div>
+  );
+}
+
+function SceneNameReveal({ localTime }) {
+  const p1 = localTime > 0.2;
+  const p2 = localTime > 1.0;
+  const p3 = localTime > 1.8;
+  const p4 = localTime > 2.8;
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+      {/* Dutch flag stripe */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '8px', background: 'linear-gradient(90deg, #AE1C28 33%, #fff 33%, #fff 66%, #21468B 66%)' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', background: 'linear-gradient(90deg, #AE1C28 33%, #fff 33%, #fff 66%, #21468B 66%)' }} />
+
+      {p1 && <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '16px', letterSpacing: '10px', color: '#f5c518', marginBottom: '30px', animation: 'fadeIn 0.4s ease forwards' }}>INTRODUCING</div>}
+
+      <div style={{ textAlign: 'center', lineHeight: 0.9 }}>
+        {p2 && <div style={{
+          fontFamily: 'Bebas Neue, sans-serif',
+          fontSize: '160px',
+          color: '#fff',
+          letterSpacing: '6px',
+          animation: 'letterPress 0.5s ease-out forwards',
+          textShadow: '0 0 80px rgba(245,197,24,0.4), 6px 6px 0px #f5c518',
+          lineHeight: 1,
+        }}>REM</div>}
+        {p3 && <div style={{
+          fontFamily: 'Bebas Neue, sans-serif',
+          fontSize: '70px',
+          color: '#f5c518',
+          letterSpacing: '20px',
+          animation: 'slideInLeft 0.5s ease-out forwards',
+          lineHeight: 1.2,
+        }}>VAN DER HEIJDEN</div>}
+      </div>
+
+      {p4 && <div style={{
+        marginTop: '40px',
+        fontFamily: 'Montserrat, sans-serif',
+        fontWeight: 900,
+        fontSize: '20px',
+        letterSpacing: '8px',
+        color: '#fff',
+        background: '#f5c518',
+        padding: '10px 40px',
+        animation: 'zoomIn 0.4s ease-out forwards',
+      }}>YOUR NEXT BEST HIRE</div>}
+    </div>
+  );
+}
+
+function SceneInterview({ localTime }) {
+  const showPhoto = localTime > 0.3;
+  const showLower = localTime > 1.2;
+  const showQuote = localTime > 2.2;
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+      {/* Background gradient */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 40% 50%, #1a1a1a 0%, #000 100%)' }} />
+      
+      {/* Photo */}
+      {showPhoto && (
+        <div style={{
+          position: 'absolute',
+          right: '8%',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: '420px',
+          height: '520px',
+          animation: 'slideInRight 0.6s ease-out forwards',
+          zIndex: 5,
+        }}>
+          <img
+            src="uploads/WhatsApp Image 2026-04-29 at 10.34.09.jpeg"
+            alt="Rem van der Heijden"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', filter: 'contrast(1.1) brightness(0.95)' }}
+          />
+          {/* Frame */}
+          <div style={{ position: 'absolute', inset: 0, border: '3px solid #f5c518', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: '6px', border: '1px solid rgba(245,197,24,0.3)', pointerEvents: 'none' }} />
+        </div>
+      )}
+
+      {/* Lower third */}
+      {showLower && (
+        <div style={{
+          position: 'absolute',
+          bottom: '80px',
+          right: '8%',
+          width: '420px',
+          animation: 'slideInRight 0.4s ease-out forwards',
+          zIndex: 10,
+        }}>
+          <div style={{ background: '#f5c518', padding: '10px 20px' }}>
+            <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '30px', letterSpacing: '3px', color: '#000', lineHeight: 1 }}>REM VAN DER HEIJDEN</div>
+          </div>
+          <div style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid #f5c518', padding: '8px 20px' }}>
+            <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '13px', color: '#f5c518', letterSpacing: '3px' }}>CERTIFIED LEGEND · NL</div>
+          </div>
+        </div>
+      )}
+
+      {/* Quote on the left */}
+      {showQuote && (
+        <div style={{
+          position: 'absolute',
+          left: '8%',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: '45%',
+          animation: 'slideInLeft 0.5s ease-out forwards',
+          zIndex: 5,
+        }}>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '22px', color: '#f5c518', letterSpacing: '6px', marginBottom: '20px' }}>SUBJECT STATES:</div>
+          <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '38px', fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: '30px' }}>
+            "I'm not just qualified. I'm <span style={{ color: '#f5c518' }}>overqualified</span>... and that's an understatement."
+          </div>
+          <div style={{ width: '60px', height: '3px', background: '#f5c518' }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SceneAchievements({ localTime }) {
+  const achievements = [
+    { icon: '🏆', title: 'PROBLEM SOLVER', sub: 'Solved problems that didn\'t exist yet' },
+    { icon: '⚡', title: 'FAST LEARNER', sub: 'Mastered things in days, not months' },
+    { icon: '🤝', title: 'TEAM PLAYER', sub: 'Makes everyone around him better' },
+    { icon: '🎯', title: '100% RELIABLE', sub: 'Never missed a deadline. Ever.' },
+  ];
+  const showHeader = localTime > 0.2;
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#0d0d0d', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', gap: '50px', overflow: 'hidden' }}>
+      {showHeader && (
+        <div style={{ textAlign: 'center', animation: 'slideUp 0.5s ease-out forwards' }}>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '80px', color: '#fff', letterSpacing: '8px', lineHeight: 1, textShadow: '0 0 40px rgba(245,197,24,0.2)' }}>KEY ACHIEVEMENTS</div>
+          <div style={{ width: '120px', height: '4px', background: '#f5c518', margin: '10px auto 0' }} />
+        </div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', width: '100%', maxWidth: '1100px' }}>
+        {achievements.map((a, i) => {
+          const show = localTime > 1.0 + i * 0.5;
+          return show ? (
+            <div key={i} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '24px',
+              background: 'rgba(245,197,24,0.05)',
+              border: '1px solid rgba(245,197,24,0.2)',
+              padding: '30px',
+              animation: 'slideInLeft 0.4s ease-out forwards',
+            }}>
+              <div style={{ fontSize: '48px', lineHeight: 1 }}>{a.icon}</div>
+              <div>
+                <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '32px', color: '#f5c518', letterSpacing: '3px' }}>{a.title}</div>
+                <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '16px', color: '#aaa', marginTop: '4px' }}>{a.sub}</div>
+              </div>
+            </div>
+          ) : <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '30px', minHeight: '100px' }} />;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SceneStats({ localTime }) {
+  const stats = [
+    { value: '21', label: 'YEARS OLD', sub: 'Peak performance age' },
+    { value: '100%', label: 'COMMITMENT', sub: 'All-in, every time' },
+    { value: '∞', label: 'POTENTIAL', sub: 'Literally unlimited' },
+    { value: '#1', label: 'CANDIDATE', sub: 'Out of everyone' },
+  ];
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(180deg, #0a0a0a, #111)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '50px', overflow: 'hidden' }}>
+      {localTime > 0.2 && (
+        <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '24px', letterSpacing: '16px', color: '#666', animation: 'fadeIn 0.5s ease forwards' }}>BY THE NUMBERS</div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0', width: '100%' }}>
+        {stats.map((s, i) => {
+          const show = localTime > 0.5 + i * 0.4;
+          return (
+            <div key={i} style={{
+              borderRight: i < 3 ? '1px solid rgba(245,197,24,0.2)' : 'none',
+              padding: '40px 50px',
+              textAlign: 'center',
+              opacity: show ? 1 : 0,
+              transform: show ? 'translateY(0) scale(1)' : 'translateY(40px) scale(0.8)',
+              transition: 'all 0.5s ease',
+            }}>
+              <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '100px', color: '#f5c518', lineHeight: 1, textShadow: '0 0 40px rgba(245,197,24,0.4)' }}>{s.value}</div>
+              <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '24px', color: '#fff', letterSpacing: '4px', marginTop: '10px' }}>{s.label}</div>
+              <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '13px', color: '#555', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '2px' }}>{s.sub}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SceneSkillBars({ localTime }) {
+  const skills = [
+    { name: 'AWESOMENESS', pct: 99 },
+    { name: 'CHARM & CHARISMA', pct: 97 },
+    { name: 'PROBLEM SOLVING', pct: 95 },
+    { name: 'TEAM ENERGY', pct: 100 },
+    { name: 'LOOKING GOOD', pct: 98 },
+  ];
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '80px 120px', overflow: 'hidden', gap: '80px' }}>
+      <div style={{ flex: 1 }}>
+        {localTime > 0.2 && (
+          <div style={{ marginBottom: '50px', animation: 'slideUp 0.5s ease forwards' }}>
+            <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '72px', color: '#fff', lineHeight: 1, letterSpacing: '4px' }}>SKILL<br/><span style={{ color: '#f5c518' }}>MATRIX</span></div>
+            <div style={{ width: '80px', height: '4px', background: '#f5c518', marginTop: '16px' }} />
+          </div>
+        )}
+        {skills.map((s, i) => {
+          const show = localTime > 1.0 + i * 0.45;
+          return (
+            <div key={i} style={{ marginBottom: '22px', opacity: show ? 1 : 0, transition: 'opacity 0.4s ease' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '13px', color: '#aaa', letterSpacing: '3px' }}>{s.name}</span>
+                <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '20px', color: '#f5c518' }}>{s.pct}%</span>
+              </div>
+              <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, height: '100%',
+                  background: `linear-gradient(90deg, #f5c518, #fff)`,
+                  width: show ? `${s.pct}%` : '0%',
+                  transition: 'width 1.2s cubic-bezier(0.25, 1, 0.5, 1)',
+                  boxShadow: '0 0 10px rgba(245,197,24,0.6)',
+                }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* Photo side */}
+      <div style={{ width: '350px', flexShrink: 0, position: 'relative' }}>
+        {localTime > 0.5 && (
+          <div style={{ animation: 'slideInRight 0.6s ease-out forwards' }}>
+            <img
+              src="uploads/WhatsApp Image 2026-04-28 at 14.05.39.jpeg"
+              alt="Rem"
+              style={{ width: '100%', height: '460px', objectFit: 'cover', objectPosition: 'center top', filter: 'contrast(1.1) saturate(0.9)' }}
+            />
+            <div style={{ position: 'absolute', inset: 0, border: '2px solid #f5c518' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(0deg, rgba(0,0,0,0.9), transparent)', padding: '30px 20px 16px', fontFamily: 'Bebas Neue, sans-serif', fontSize: '22px', letterSpacing: '4px', color: '#f5c518' }}>
+              KONINGSDAG 2026
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SceneTestimonial({ localTime }) {
+  const p1 = localTime > 0.3;
+  const p2 = localTime > 1.5;
+  const p3 = localTime > 3.0;
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#f5c518', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px', overflow: 'hidden', position: 'relative' }}>
+      {/* Background photo faded */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}>
+        <img src="uploads/WhatsApp Image 2026-04-28 at 14.05.40 (2).jpeg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', opacity: 0.12, filter: 'grayscale(100%)' }} />
+      </div>
+      
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '1000px', textAlign: 'center' }}>
+        {p1 && <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '20px', letterSpacing: '12px', color: 'rgba(0,0,0,0.5)', marginBottom: '30px', animation: 'fadeIn 0.5s ease forwards' }}>PEER TESTIMONIALS</div>}
+        
+        {p2 && <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '80px', lineHeight: 1.05, color: '#000', animation: 'letterPress 0.6s ease-out forwards', marginBottom: '40px' }}>
+          "Working with Rem is like having a cheat code. You just win."
+        </div>}
+
+        {p3 && <div style={{ animation: 'slideUp 0.5s ease-out forwards' }}>
+          <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '16px', letterSpacing: '4px', color: 'rgba(0,0,0,0.6)', marginBottom: '4px' }}>— EVERY MANAGER, EVER</div>
+          <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '14px', color: 'rgba(0,0,0,0.4)', letterSpacing: '2px' }}>MULTIPLE VERIFIED SOURCES</div>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+function SceneReasons({ localTime }) {
+  const reasons = [
+    'Shows up before he\'s supposed to',
+    'Makes every meeting worth attending',
+    'Turns chaos into clarity',
+    'Dutch precision, international charm',
+    'Improves everything he touches',
+  ];
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#0a0a0a', display: 'flex', alignItems: 'center', gap: '80px', padding: '80px 120px', overflow: 'hidden' }}>
+      <div style={{ flex: 1 }}>
+        {localTime > 0.2 && (
+          <div style={{ marginBottom: '50px', animation: 'slideUp 0.5s ease forwards' }}>
+            <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '14px', color: '#f5c518', letterSpacing: '6px', marginBottom: '16px' }}>5 REASONS TO HIRE HIM</div>
+            <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '70px', color: '#fff', lineHeight: 1, letterSpacing: '4px' }}>WHY REM<br/><span style={{ color: '#f5c518' }}>WINS.</span></div>
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {reasons.map((r, i) => {
+            const show = localTime > 1.0 + i * 0.5;
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: '20px',
+                opacity: show ? 1 : 0,
+                transform: show ? 'translateX(0)' : 'translateX(-60px)',
+                transition: 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)',
+              }}>
+                <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '32px', color: '#f5c518', minWidth: '44px' }}>0{i + 1}</div>
+                <div style={{ width: '1px', height: '40px', background: 'rgba(245,197,24,0.3)' }} />
+                <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '20px', color: '#ddd', fontWeight: 600 }}>{r}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ width: '380px', flexShrink: 0, position: 'relative' }}>
+        {localTime > 0.3 && (
+          <div style={{ animation: 'slideInRight 0.6s ease-out forwards', position: 'relative' }}>
+            <img
+              src="uploads/WhatsApp Image 2026-04-28 at 14.05.40 (2).jpeg"
+              alt="Rem at Koningsdag"
+              style={{ width: '100%', height: '500px', objectFit: 'cover', objectPosition: 'right top' }}
+            />
+            <div style={{ position: 'absolute', inset: 0, border: '2px solid #f5c518', pointerEvents: 'none' }} />
+            {localTime > 3.5 && (
+              <div style={{
+                position: 'absolute', top: '20px', right: '-20px',
+                background: '#f5c518', color: '#000',
+                fontFamily: 'Bebas Neue, sans-serif', fontSize: '20px', letterSpacing: '3px',
+                padding: '10px 20px',
+                animation: 'zoomIn 0.4s ease-out forwards',
+                transform: 'rotate(3deg)',
+              }}>THIS GUY →</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SceneFinal({ localTime }) {
+  const p1 = localTime > 0.2;
+  const p2 = localTime > 1.0;
+  const p3 = localTime > 2.0;
+  const p4 = localTime > 3.2;
+  const p5 = localTime > 4.5;
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+      {/* Animated gold lines */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, transparent, #f5c518, transparent)', animation: p1 ? 'fadeIn 0.5s ease forwards' : 'none', opacity: 0 }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, transparent, #f5c518, transparent)', animation: p1 ? 'fadeIn 0.5s ease forwards' : 'none', opacity: 0 }} />
+
+      <div style={{ textAlign: 'center', zIndex: 1 }}>
+        {p1 && <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '16px', color: '#555', letterSpacing: '10px', marginBottom: '30px', animation: 'fadeIn 0.6s ease forwards' }}>AND THE VERDICT IS...</div>}
+
+        {p2 && <div style={{
+          fontFamily: 'Bebas Neue, sans-serif',
+          fontSize: '200px',
+          lineHeight: 0.9,
+          color: '#fff',
+          animation: 'letterPress 0.7s ease-out forwards',
+          textShadow: '0 0 100px rgba(245,197,24,0.5), 8px 8px 0 #f5c518',
+          letterSpacing: '4px',
+        }}>HIRE<br/><span style={{ color: '#f5c518', WebkitTextStroke: '2px #f5c518' }}>REM.</span></div>}
+
+        {p3 && <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '20px', letterSpacing: '8px', color: '#aaa', marginTop: '30px', animation: 'slideUp 0.5s ease-out forwards', textTransform: 'uppercase' }}>
+          You'll thank yourself later.
+        </div>}
+
+        {p4 && (
+          <div style={{ display: 'flex', gap: '40px', marginTop: '50px', justifyContent: 'center', animation: 'slideUp 0.5s ease-out forwards' }}>
+            {['rem@vanderhijden.nl', 'linkedin.com/in/remvdh', '+31 6 ·· ·· ·· ··'].map((c, i) => (
+              <div key={i} style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '14px', color: '#f5c518', letterSpacing: '2px', background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)', padding: '10px 20px' }}>{c}</div>
+            ))}
+          </div>
+        )}
+
+        {p5 && (
+          <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', animation: 'fadeIn 0.8s ease forwards', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '12px', color: '#333', letterSpacing: '4px' }}>
+              © 2026 REM VAN DER HEIJDEN INDUSTRIES · ALL RIGHTS RESERVED · SERIOUSLY, HIRE HIM
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Epic Music Engine ───────────────────────────────────────────────────────
+
+function createEpicMusic(audioCtx, masterGain) {
+  const BPM = 128;
+  const BEAT = 60 / BPM;
+  const BAR = BEAT * 4;
+
+  function note(freq, startTime, duration, type = 'sawtooth', gain = 0.3, detune = 0) {
+    const osc = audioCtx.createOscillator();
+    const env = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.detune.value = detune;
+    osc.connect(filter);
+    filter.connect(env);
+    env.connect(masterGain);
+    env.gain.setValueAtTime(0, startTime);
+    env.gain.linearRampToValueAtTime(gain, startTime + 0.01);
+    env.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+    return osc;
+  }
+
+  function kick(t) {
+    const osc = audioCtx.createOscillator();
+    const env = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+    env.gain.setValueAtTime(1.0, t);
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    osc.connect(env);
+    env.connect(masterGain);
+    osc.start(t); osc.stop(t + 0.3);
+  }
+
+  function snare(t) {
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const env = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2500;
+    filter.Q.value = 0.8;
+    env.gain.setValueAtTime(0.5, t);
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    src.connect(filter);
+    filter.connect(env);
+    env.connect(masterGain);
+    src.start(t); src.stop(t + 0.2);
+  }
+
+  function hihat(t, open = false) {
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * (open ? 0.18 : 0.06), audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const env = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 8000;
+    env.gain.setValueAtTime(open ? 0.25 : 0.15, t);
+    env.gain.exponentialRampToValueAtTime(0.001, t + (open ? 0.18 : 0.06));
+    src.connect(filter);
+    filter.connect(env);
+    env.connect(masterGain);
+    src.start(t); src.stop(t + 0.25);
+  }
+
+  function brass(freq, startTime, duration, gain = 0.18) {
+    // Layered sawtooth for brass-like sound
+    [-5, 0, 5, 12].forEach(detune => note(freq, startTime, duration, 'sawtooth', gain * 0.5, detune));
+  }
+
+  const now = audioCtx.currentTime + 0.1;
+  const totalBars = 18;
+
+  // ── DRUMS ──
+  for (let bar = 0; bar < totalBars; bar++) {
+    const t = now + bar * BAR;
+    // Kick pattern: 1, 3 (and upbeat variations)
+    kick(t);
+    kick(t + BEAT * 2);
+    if (bar % 2 === 1) kick(t + BEAT * 2.75);
+    // Snare: 2, 4
+    snare(t + BEAT);
+    snare(t + BEAT * 3);
+    // Hi-hats: every 8th note
+    for (let i = 0; i < 8; i++) hihat(t + i * BEAT * 0.5, i === 6);
+  }
+
+  // ── BASS LINE ──
+  const bassNotes = [
+    [55, 0], [55, 0.5], [55, 1], [49, 1.5], [52, 2], [52, 2.5], [55, 3], [58, 3.5],
+  ];
+  for (let bar = 0; bar < totalBars; bar++) {
+    const t = now + bar * BAR;
+    bassNotes.forEach(([freq, beat]) => {
+      note(freq, t + beat * BEAT, BEAT * 0.45, 'square', 0.22);
+    });
+  }
+
+  // ── EPIC MELODY (Trumpet-like brass lead) ──
+  // Key: A minor, triumphant theme
+  const melody = [
+    // Bar 1-2: buildup
+    [220, 0, 1], [277, 1, 0.5], [330, 1.5, 0.5], [440, 2, 2],
+    // Bar 3-4: answer
+    [392, 4, 1], [349, 5, 0.5], [330, 5.5, 0.5], [294, 6, 2],
+    // Bar 5-6: climb
+    [330, 8, 0.5], [370, 8.5, 0.5], [440, 9, 1], [494, 10, 0.5], [554, 10.5, 0.5], [587, 11, 1],
+    // Bar 7-8: peak
+    [659, 12, 1.5], [587, 13.5, 0.5], [554, 14, 1], [494, 15, 1],
+  ];
+  melody.forEach(([freq, beat, dur]) => {
+    brass(freq, now + beat * BEAT, dur * BEAT, 0.2);
+  });
+
+  // Repeat melody from bar 8
+  melody.forEach(([freq, beat, dur]) => {
+    brass(freq, now + (beat + 32) * BEAT, dur * BEAT, 0.22);
+  });
+
+  // ── PAD / ATMOSPHERE ──
+  const padChords = [
+    [[220, 277, 330], 0, 8],   // Am
+    [[196, 247, 294], 8, 8],   // Gm
+    [[175, 220, 262], 16, 8],  // Fm
+    [[220, 277, 330], 24, 8],  // Am
+    [[247, 311, 370], 32, 8],  // Bm
+    [[220, 277, 330], 40, 8],  // Am final
+    [[262, 330, 392], 48, 8],  // Cm big
+    [[220, 277, 330, 440], 56, 16],  // Am high ending
+  ];
+  padChords.forEach(([freqs, startBeat, durBeats]) => {
+    freqs.forEach(freq => {
+      const osc = audioCtx.createOscillator();
+      const env = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 800;
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      osc.connect(filter);
+      filter.connect(env);
+      env.connect(masterGain);
+      const st = now + startBeat * BEAT;
+      const dur = durBeats * BEAT;
+      env.gain.setValueAtTime(0, st);
+      env.gain.linearRampToValueAtTime(0.06, st + 0.3);
+      env.gain.setValueAtTime(0.06, st + dur - 0.3);
+      env.gain.linearRampToValueAtTime(0, st + dur);
+      osc.start(st); osc.stop(st + dur + 0.1);
+    });
+  });
+}
+
+// ─── Main App ────────────────────────────────────────────────────────────────
+
+const TOTAL_DURATION = 72; // seconds
+
+// Scene definitions: [startTime, endTime, Component, label]
+const SCENES = [
+  [0,    5,   SceneIntro,         'COLD OPEN'],
+  [5,    12,  SceneTitle,         'TITLE CARD'],
+  [12,   20,  SceneNameReveal,    'NAME REVEAL'],
+  [20,   31,  SceneInterview,     'INTERVIEW'],
+  [31,   42,  SceneAchievements,  'ACHIEVEMENTS'],
+  [42,   50,  SceneStats,         'STATS'],
+  [50,   61,  SceneSkillBars,     'SKILL MATRIX'],
+  [61,   68,  SceneTestimonial,   'TESTIMONIAL'],
+  [68,   77,  SceneReasons,       'WHY REM'],
+  [77,   TOTAL_DURATION + 15, SceneFinal, 'FINALE'],
+];
+
+function App() {
+  const [time, setTime] = useState(() => {
+    const saved = parseFloat(localStorage.getItem('remvc_time') || '0');
+    return isNaN(saved) ? 0 : saved;
+  });
+  const [playing, setPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const rafRef = useRef(null);
+  const lastRealTime = useRef(null);
+  const controlsTimer = useRef(null);
+  const audioCtxRef = useRef(null);
+  const masterGainRef = useRef(null);
+  const musicStartedRef = useRef(false);
+
+  const totalDuration = TOTAL_DURATION;
+
+  const tick = useCallback((realNow) => {
+    if (lastRealTime.current !== null) {
+      const delta = (realNow - lastRealTime.current) / 1000;
+      setTime(prev => {
+        const next = Math.min(prev + delta, totalDuration);
+        localStorage.setItem('remvc_time', next);
+        return next;
+      });
+    }
+    lastRealTime.current = realNow;
+    rafRef.current = requestAnimationFrame(tick);
+  }, [totalDuration]);
+
+  useEffect(() => {
+    if (playing) {
+      lastRealTime.current = null;
+      rafRef.current = requestAnimationFrame(tick);
+    } else {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      lastRealTime.current = null;
+    }
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [playing, tick]);
+
+  // Stop at end
+  useEffect(() => {
+    if (time >= totalDuration) setPlaying(false);
+  }, [time, totalDuration]);
+
+  const handleMouseMove = useCallback(() => {
+    setShowControls(true);
+    clearTimeout(controlsTimer.current);
+    controlsTimer.current = setTimeout(() => setShowControls(false), 3000);
+  }, []);
+
+  const startMusic = () => {
+    if (musicStartedRef.current) return;
+    musicStartedRef.current = true;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtxRef.current = ctx;
+    const master = ctx.createGain();
+    master.gain.value = 0.55;
+    master.connect(ctx.destination);
+    masterGainRef.current = master;
+    createEpicMusic(ctx, master);
+  };
+
+  const togglePlay = () => {
+    if (time >= totalDuration) {
+      setTime(0);
+      localStorage.setItem('remvc_time', '0');
+      musicStartedRef.current = false;
+      if (audioCtxRef.current) { audioCtxRef.current.close(); audioCtxRef.current = null; }
+      setPlaying(true);
+      return;
+    }
+    if (!playing) startMusic();
+    setPlaying(p => !p);
+  };
+
+  const seek = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const newTime = x * totalDuration;
+    setTime(newTime);
+    localStorage.setItem('remvc_time', newTime);
+  };
+
+  // Determine current scene
+  const currentScenes = SCENES.filter(([s, e]) => time >= s && time < e);
+
+  const formatTime = (t) => {
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  return (
+    <div
+      style={{ width: '100vw', height: '100vh', background: '#000', position: 'relative', cursor: showControls ? 'default' : 'none' }}
+      onMouseMove={handleMouseMove}
+      onClick={(e) => { if (e.target === e.currentTarget) togglePlay(); }}
+    >
+      {/* Scene layer */}
+      <div style={{ position: 'absolute', inset: 0 }}>
+        {currentScenes.map(([start, end, SceneComp, label]) => {
+          const localTime = time - start;
+          const progress = (time - start) / (end - start);
+          return (
+            <div key={label} style={{ position: 'absolute', inset: 0 }}>
+              <SceneComp localTime={localTime} progress={Math.min(1, Math.max(0, progress))} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Scene flash on transition */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 50,
+        background: '#fff',
+        opacity: SCENES.some(([s]) => Math.abs(time - s) < 0.06) ? 0.15 : 0,
+        transition: 'opacity 0.06s',
+      }} />
+
+      {/* Film grain overlay */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 60, opacity: 0.04,
+        background: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 512 512\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.75\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+        backgroundSize: '256px',
+      }} />
+
+      {/* Controls */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100,
+        background: 'linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%)',
+        padding: '40px 40px 30px',
+        opacity: showControls ? 1 : 0,
+        transition: 'opacity 0.4s ease',
+      }}>
+        {/* Progress bar */}
+        <div
+          style={{ height: '4px', background: 'rgba(255,255,255,0.15)', cursor: 'pointer', marginBottom: '20px', position: 'relative' }}
+          onClick={seek}
+        >
+          <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${(time / totalDuration) * 100}%`, background: '#f5c518', transition: 'width 0.1s linear' }} />
+          {/* Chapter marks */}
+          {SCENES.map(([s], i) => (
+            <div key={i} style={{ position: 'absolute', top: '-3px', left: `${(s / totalDuration) * 100}%`, width: '2px', height: '10px', background: 'rgba(255,255,255,0.3)' }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <button
+            onClick={togglePlay}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: '#fff', fontSize: '28px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+          >
+            {playing ? '⏸' : '▶'}
+          </button>
+          <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '13px', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px' }}>
+            {formatTime(time)} / {formatTime(totalDuration)}
+          </div>
+          <div style={{ flex: 1 }} />
+          {currentScenes[0] && (
+            <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '12px', color: '#f5c518', letterSpacing: '4px', opacity: 0.7 }}>
+              {currentScenes[0][3]}
+            </div>
+          )}
+          <button
+            onClick={() => { setTime(0); setPlaying(false); localStorage.setItem('remvc_time', '0'); musicStartedRef.current = false; if (audioCtxRef.current) { audioCtxRef.current.close(); audioCtxRef.current = null; } }}
+            style={{ background: 'none', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', padding: '6px 16px', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontFamily: 'Roboto Mono, monospace', letterSpacing: '2px' }}
+          >RESTART</button>
+        </div>
+      </div>
+
+      {/* Click-to-play overlay when paused and at 0 */}
+      {!playing && time === 0 && (
+        <div
+          onClick={togglePlay}
+          style={{ position: 'absolute', inset: 0, zIndex: 90, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'rgba(0,0,0,0.7)' }}
+        >
+          <div style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid #f5c518', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '30px', animation: 'pulse 2s ease infinite' }}>
+            <div style={{ fontSize: '44px', marginLeft: '8px' }}>▶</div>
+          </div>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '32px', color: '#fff', letterSpacing: '10px' }}>PRESS PLAY</div>
+          <div style={{ fontFamily: 'Roboto Mono, monospace', fontSize: '14px', color: '#666', letterSpacing: '4px', marginTop: '12px' }}>REM VAN DER HEIJDEN — VIDEO CV 2026</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
